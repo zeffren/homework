@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+
+    <meta charset="UTF-8" />
+	<title>Edmodo Assignment</title>
+	
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/uikit.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/uikit.gradient.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/components/autocomplete.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/components/datepicker.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/components/datepicker.gradient.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/components/form-advanced.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/components/form-select.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/components/tooltip.min.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/css/components/notify.min.css" />
+
+	<style type="text/css">
+
+		h2 {
+
+			display: inline;
+		}
+
+		.instructions {
+
+			margin: 10px 0;
+			font-style: italic;
+		}
+
+		#welcome button {
+
+			margin: 0 0 0 8px;
+		}
+
+		#homework {
+
+			width: 300px;
+			height: 50px;
+		}
+
+
+		.question {
+
+			padding: 5px 0;
+			font-style: italic;
+		}
+
+		.answer {
+			padding: 5px 0;
+		}
+
+		.answer input {
+
+			width: 250px;
+		}
+
+		.submitted {
+			color: #a1a1a1;
+			font-size: .8em;
+			font-style: italic;
+			margin-left: 10px;
+		}
+
+		#archive {
+			color: #a1a1a1;
+		}
+
+		label {
+
+			font-weight: bold;
+			padding: 0 5px;
+		}
+		
+	</style>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/js/uikit.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/js/components/autocomplete.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/js/components/datepicker.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/js/components/form-select.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/js/components/lightbox.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/js/components/tooltip.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.18.0/js/components/notify.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.12.0/moment.min.js"></script>
+
+  </head>
+  <body>
+    
+    <div id="content"></div>
+
+    <script type="text/babel">
+
+
+function getUser( params ) {
+
+	var url = '/user';
+    $.ajax({
+      url: url,
+   	  data: { username: params.username },
+      dataType: 'json',
+      cache: false,
+      success: function(data) {
+      	//console.log('user: ' + JSON.stringify( data ) );
+      	var user = ( data ) ? data[0] : null;
+        if( params.callback ) {
+        	params.callback( user );
+        }
+      },
+      error: function(xhr, status, err) {
+        console.error( url, status, err.toString() );
+      }.bind(this)
+    });
+}
+
+function getAssignments( params ) {
+
+	var data = {};
+	if( params.username ) {
+		data.username = params.username;
+	}
+
+	var url = '/assignment';
+    $.ajax({
+      url: url,
+   	  data: data,
+      dataType: 'json',
+      cache: false,
+      success: function(data) {
+
+      	//console.log( "got assignments : " + JSON.stringify( data));
+        if( params.callback ) {
+        	params.callback( data );
+        }
+      },
+      error: function(xhr, status, err) {
+        console.error( url, status, err.toString() );
+      }.bind(this)
+    });
+}
+
+function putAssignment( params ) {
+
+  	var url = "/assignment";
+    $.ajax({
+      type: 'PUT',
+      url: url,
+      data: { assignment: JSON.stringify( params.assignment ) },
+      dataType: 'json',
+      success: function(data) {
+      	
+      	if( params.callback ) {
+      		params.callback( data );
+      	}
+      },
+      error: function(xhr, status, err) {
+        console.error(url, status, err.toString());
+      }.bind(this)
+    });	
+}
+
+
+function getArchive( params ) {
+
+	var data = {};
+	if( params.id ) {
+		data.id = params.id;
+	}
+
+	var url = '/archive';
+    $.ajax({
+      url: url,
+   	  data: data,
+      dataType: 'json',
+      cache: false,
+      success: function(data) {
+
+      	//console.log( "archive:\n" + JSON.stringify( data));
+        if( params.callback ) {
+        	params.callback( data );
+        }
+      },
+      error: function(xhr, status, err) {
+        console.error( url, status, err.toString() );
+      }.bind(this)
+    });
+}
+
+
+var Home = React.createClass({
+
+  handleLogin: function( user ) {
+
+  	var name = (user) ? user.name : null;
+
+  	console.log( "login: " + name );
+  	this.setState( { user: user, authenticated: true } );
+
+	getAssignments( {
+    	username: name,
+    	callback: (function( data ) {
+    		this.setState({data: data});
+
+    	}).bind( this )
+    }); 	
+	 	
+  },
+  handleLogout: function() {
+
+  	console.log( "logout");
+  	this.setState({authenticated:false,user:null});
+  },
+  handleAssignmentSelect: function(assignment) {
+
+  	//console.log( "selected " + assignment.homework.title);
+  	this.setState({data:this.state.data,assignment:assignment});
+  },
+  handleAssignmentSubmit: function(assignment) {
+
+  	var s = ( assignment ) ? JSON.stringify(assignment) : "unknown";
+  	//console.log( "submitted " + s)
+
+  	this.setState({data:this.state.data});
+  },
+  getInitialState: function() {
+
+    return {data: []};
+  },
+  componentDidMount: function() {
+
+  	if( this.state.authenticated ) {
+	    getAssignments( {
+	    	callback: (function( data ) {
+	    		this.setState({data: data});
+	    	}).bind( this )
+	    });
+	}
+    //setInterval(this.loadAssignmentFromServer, this.props.pollInterval);
+  },
+  render: function() {
+
+  	var welcome = ( this.state.authenticated ) ? <Welcome user={this.state.user} callback={this.handleLogout} /> : '';
+    return (
+      <div className="home">
+      	<form>
+      		
+      		{welcome}
+      		<Login authenticated={this.state.authenticated} callback={this.handleLogin}/>
+      		<h1>Homework</h1>
+			<AssignmentList data={this.state.data} user={this.state.user} callback={this.handleAssignmentSelect}/>	
+			<Assignment assignment={this.state.assignment} user={this.state.user} callback={this.handleAssignmentSubmit} />
+		</form>
+      </div>
+    );
+  }
+});
+
+
+
+var AssignmentList = React.createClass({
+
+  render: function() {
+
+  	var callback = this.props.callback;
+  	var userColumn = (this.props.user && this.props.user.teacher) ?  "Student" : "Teacher";
+  	var user = this.props.user;
+    var homeworkRows = this.props.data.map(function(assignment) {
+      return (
+        <AssignmentEntry user={user} assignment={assignment} key={assignment.id} callback={callback}>       
+        </AssignmentEntry>
+      );
+    });
+    return (
+		<table className="uk-table uk-table-striped uk-table-hover">					    
+	    	<thead>
+		        <tr>
+		            <th className="uk-width-1-5">Title</th>
+		            <th className="uk-width-1-5">{userColumn}</th>
+		            <th className="uk-width-1-5">Question</th>
+		            <th className="uk-width-1-5">Due</th>
+		            <th className="uk-width-1-5">Submitted</th>
+		        </tr>
+		    </thead>
+		    <tbody>    
+				{homeworkRows}
+		    </tbody>
+		</table>  
+    );
+  }
+});
+
+
+
+var AssignmentEntry = React.createClass({
+
+  handleClick: function() {
+
+  	//console.log('clicked ' + this.props.assignment.homework.title );
+  	this.props.callback( this.props.assignment );
+  },
+  render: function() {
+
+  	var assignment = this.props.assignment;
+  	var answer = ( assignment.answer ) ? "A: " + assignment.answer : "";
+  	var submitted = ( assignment.submitted ) ? moment( assignment.submitted ).format("MM/DD/YYYY") : "";
+  	var due = ( assignment.due ) ? moment( assignment.due ).format("MM/DD/YYYY") : "";
+  	var othername = (this.props.user && this.props.user.teacher) ? assignment.student.name : assignment.teacher.name;
+
+    return (
+      <tr>
+        <td><a href="#homeworkModal" data-uk-modal onClick={this.handleClick}>{this.props.assignment.homework.title}</a></td>
+        <td>{othername}</td>
+        <td><span title={answer}>{this.props.assignment.homework.question}</span></td>
+        <td>{due}</td>
+        <td>{submitted}</td>
+      </tr>	
+    );
+  }
+});
+
+
+
+var Assignment = React.createClass({
+
+  getInitialState: function() {
+    return {answer: '', archive: []};
+  },
+  componentDidMount: function() {
+
+  	var teacher = ( this.props.user ) ? this.props.user.teacher : false;
+  	var assignment = this.props.assignment;
+  	if( assignment ) {
+	    getArchive( {
+	    	id: assignment.id,
+	    	callback: (function( data ) {
+	    		this.setState({archive: data});
+	    	}).bind( this )
+	    });
+	}
+  },  
+  componentWillReceiveProps: function(nextProps) {
+
+  	//console.log("homerwork updating");
+  	var answer = ( nextProps.assignment ) ? nextProps.assignment.answer : "";
+	this.setState({
+	    answer: answer
+	});
+
+  	var teacher = ( nextProps.user ) ? nextProps.user.teacher : false;
+  	var assignment = nextProps.assignment;
+  	if( assignment ) {
+	    getArchive( {
+	    	id: assignment.id,
+	    	callback: (function( data ) {
+	    		this.setState({archive: data});
+	    	}).bind( this )
+	    });
+	}
+	else {
+		this.setState({archive:[]});
+	}
+
+  },	
+  handleAnswerChange: function(e) {
+
+    this.setState({answer: e.target.value});
+  },
+  handleSubmit: function(e) {
+
+    e.preventDefault();
+    var answer = this.state.answer.trim();
+    if (!answer) {
+      // VALIDATE
+      alert("answer required!");
+      return;
+    }
+
+    var assignment = this.props.assignment;
+    assignment.answer = answer;
+    assignment.submitted = moment().format();
+
+    putAssignment({
+    	assignment: assignment,
+    	callback: (function() {
+
+    		var modal = UIkit.modal("#homeworkModal");
+  			modal.hide();
+
+    		this.props.callback( assignment );
+
+    	}).bind( this )
+    });
+    //this.setState({answer: ''});
+  },  
+  render: function() {
+
+  	var assignment = this.props.assignment;
+  	//console.log( JSON.stringify(assignment ) );
+
+  	var title = ( assignment ) ? assignment.homework.title : "";
+  	var question = ( assignment ) ? assignment.homework.question : "";
+	var submitted = ( assignment && assignment.submitted ) ? <span className="submitted">(Submitted {moment(assignment.submitted).format("MM/DD/YYYY hh:mm")})</span> : "";
+  	var teacher = ( this.props.user ) ? this.props.user.teacher : false;
+  	
+
+  	var submitComponent = "", answerComponent = this.state.answer;
+
+  	// only allow answer input for student iff before due date
+  	if( teacher == false && assignment && moment().valueOf() < moment( assignment.due ).valueOf() ) {
+
+  		answerComponent = <input type="text" placeholder="answer" value={this.state.answer} onChange={this.handleAnswerChange} />
+  		submitComponent = <button className="uk-button uk-button-mini uk-button-primary" type="button" onClick={this.handleSubmit}>Submit</button>;
+  	}
+
+  	var archive = ( teacher ) ? <ArchiveList data={this.state.archive} /> : "";
+
+    return (
+		<div id="homeworkModal" className="uk-modal">
+		    <div className="uk-modal-dialog">
+		        <a className="uk-modal-close uk-close"></a>
+		        <h2>{title}</h2>
+		        <div className="question">
+		        	<label>Q:</label>
+		        	{question}
+		        </div>
+		        <div className="answer">
+			        <label>A:</label>
+			        {answerComponent}{submitComponent} {submitted}    
+		        </div>
+		        
+		        {archive}
+		    </div>
+		</div>
+    );
+  }
+});
+
+
+var ArchiveList = React.createClass({
+
+  render: function() {
+
+    var archiveRows = this.props.data.map(function(assignment) {
+      var submitted =  <span className="submitted">(Submitted {moment(assignment.submitted).format("MM/DD/YYYY hh:mm")})</span>;
+      return (
+        <div key={assignment.version} className="answer"><label>A:</label>{assignment.answer} {submitted}</div>
+      );
+    });
+    return (
+		<div id="archive">   
+			{archiveRows}
+  		</div>
+    );
+  }
+});
+
+
+var Login = React.createClass({
+
+  getInitialState: function() {
+
+    return {user: 'zeffren'};
+  },
+  handleUserChange: function(e) {
+
+    this.setState({user: e.target.value});
+  },
+  handleLogin: function(e) {
+
+    e.preventDefault();
+    var name = this.state.user.trim();
+    if (!name) {
+      // VALIDATE
+      alert("user required!");
+      return;
+    }
+
+    getUser( { username: name, callback: (function( user ) {
+
+    	if( user == null ) {
+    		alert("invalid user");
+    		return;
+    	}
+    	//console.log("here " + JSON.stringify( user ) );
+    	this.props.callback( user );
+  		var modal = UIkit.modal("#loginModal");
+  		modal.hide();
+  	}).bind( this ) });
+
+  }, 
+  componentDidMount: function() {
+
+  	var modal = UIkit.modal("#loginModal");
+  	modal.show(); 	
+  },
+  componentWillReceiveProps: function(nextProps) {
+
+  	var authenticated = nextProps.authenticated || false;
+  	if( !authenticated ) {
+  		console.log('not authenticated');
+  		var modal = UIkit.modal("#loginModal");
+  		modal.show();
+  	}
+  },
+  render: function() {
+
+    return (
+		<div id="loginModal" className="uk-modal">
+		    <div className="uk-modal-dialog">
+		    	<div className="instructions">Welcome to homework demo.  Please login as "zeffren" or "bartsimpson" for the student roles or "aristotle", "herodotus" or "demosthenes" for the teacher roles</div>
+			    <input type="text" placeholder="enter username" value={this.state.user} onChange={this.handleUserChange} />
+			    <button className="uk-button uk-button-mini uk-button-primary" type="button" onClick={this.handleLogin}>Login</button>
+		    </div>
+		</div>
+    );
+  }
+});
+
+
+var Welcome = React.createClass({
+
+  	render: function() {
+
+  		var name = this.props.user ? this.props.user.name : "";
+	    return (
+			<div id="welcome">		
+				Welcome <i className="uk-icon-user"></i> <b>{name}</b>	    
+				<button className="uk-button uk-button-mini uk-button-primary" type="button" onClick={this.props.callback}>Logout</button>
+			</div>
+	    );
+  	}
+});
+
+ReactDOM.render(
+  <Home />,
+  document.getElementById('content')
+);
+
+
+    </script>		
+</html>
